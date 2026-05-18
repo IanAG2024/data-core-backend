@@ -1,0 +1,353 @@
+📋 RESUMEN COMPLETO DE GUÍAS DE PRUEBA CREADAS
+
+═══════════════════════════════════════════════════════════════════════
+
+📁 ARCHIVOS CREADOS PARA PRUEBAS (4 archivos):
+
+1. ✅ GUIA_PRUEBA_ENDPOINTS.md
+   - 52 endpoints documentados
+   - Request/Response de cada uno
+   - Ejemplos con curl
+   - Script bash incluido
+   - 200+ líneas de detalles
+
+2. ✅ test_endpoints_interactivo.py
+   - Script Python interactivo
+   - Prueba automática completa
+   - 10 fases diferentes
+   - Colores en terminal
+   - Gestión automática de IDs
+
+3. ✅ FLUJO_COMPLETO.md
+   - Diagramas ASCII del flujo
+   - 7 fases del sistema
+   - Explicación de cada paso
+   - Checklist de prueba
+   - Respuestas HTTP esperadas
+
+4. ✅ Este resumen
+   - Guía rápida
+   - Instrucciones paso a paso
+   - Troubleshooting
+   - Métricas de éxito
+
+═══════════════════════════════════════════════════════════════════════
+
+🚀 CÓMO EMPEZAR - 2 PASOS SIMPLES:
+
+PASO 1: Iniciar el servidor
+────────────────────────────
+cd /Users/mac/PycharmProjects/FlaskRecuperacionInformacion
+python app.py
+
+Verás:
+✓ La app corriendo en http://localhost:5000
+
+PASO 2: Probar endpoints (En otra terminal)
+──────────────────────────────────────────
+cd /Users/mac/PycharmProjects/FlaskRecuperacionInformacion
+python test_endpoints_interactivo.py
+
+Verás:
+✓ Todas las pruebas ejecutadas
+✓ Resultados con colores
+✓ Resumen final
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 QUÉ PRUEBA CADA SCRIPT:
+
+test_endpoints_interactivo.py (RECOMENDADO):
+─────────────────────────────────────────────
+✓ Autenticación: Registro, Login, Perfil
+✓ Categorías: Crear, Listar, Árbol
+✓ Etiquetas: Crear, Listar, Asignar
+✓ Documentos: Subir, Indexar, Buscar
+✓ Palabras clave: Agregar, Obtener
+✓ Búsqueda: Simple, Filtrada, Similares
+✓ Recomendaciones: Generar, Obtener
+✓ Accesos: Registrar, Ver
+
+TOTAL: 10+ fases, 50+ operaciones
+
+═══════════════════════════════════════════════════════════════════════
+
+🔍 EJEMPLO DE EJECUCIÓN:
+
+$ python test_endpoints_interactivo.py
+
+╔════════════════════════════════════════════════════════════════╗
+║          🧪 PRUEBA INTERACTIVA DE TODOS LOS ENDPOINTS        ║
+╚════════════════════════════════════════════════════════════════╝
+
+Base URL: http://localhost:5000/api
+Iniciando pruebas...
+
+══════════════════════════════════════════════════════════════════════════
+                           1️⃣  AUTENTICACIÓN
+══════════════════════════════════════════════════════════════════════════
+
+ℹ Registrando usuario...
+POST /api/auth/registro
+✓ Usuario registrado con ID: 550e8400-e29b-41d4-a716-446655440000
+ℹ Token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+ℹ Obteniendo perfil...
+GET /api/auth/perfil
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "nombre": "Test User 1747776000.0",
+  "email": "test_1747776000.0@example.com",
+  "activo": true,
+  "creado_en": "2026-05-17T10:40:00"
+}
+✓ Perfil obtenido
+
+... (más fases)
+
+══════════════════════════════════════════════════════════════════════════
+                         ✅ RESUMEN DE PRUEBAS
+══════════════════════════════════════════════════════════════════════════
+
+✓ Todas las pruebas completadas
+ℹ Usuario ID: 550e8400-e29b-41d4-a716-446655440000
+ℹ Categoría ID: 1
+ℹ Etiqueta ID: 1
+ℹ Documento ID: 550e8400-e29b-41d4-a716-446655440001
+
+═══════════════════════════════════════════════════════════════════════════
+
+✅ FLUJO VISUAL SIMPLIFICADO:
+
+                          USUARIO
+                            │
+                            ▼
+                    ┌──────────────┐
+                    │ Registrarse  │
+                    └──────┬───────┘
+                           │ TOKEN
+                           ▼
+                  ┌────────────────────┐
+                  │ Crear Estructura   │
+                  │ - Categorías       │
+                  │ - Etiquetas        │
+                  └────────┬───────────┘
+                           │
+                           ▼
+                  ┌────────────────────┐
+                  │ Subir Documentos   │
+                  │ - Archivo          │
+                  │ - Palabras clave   │
+                  │ - Etiquetas        │
+                  └────────┬───────────┘
+                           │
+                ┌──────────┴─────────────┐
+                │                        │
+                ▼                        ▼
+         ┌────────────┐          ┌──────────────┐
+         │  Búsqueda  │          │Recomendaciones
+         │- Por texto │          │- TF-IDF     │
+         │- Por cat   │          │- Categoría  │
+         │- Por tags  │          │- Similares  │
+         └────────────┘          └──────────────┘
+                │                        │
+                └──────────┬─────────────┘
+                           │
+                           ▼
+                   ┌────────────────┐
+                   │   Resultados   │
+                   │   Relevantes   │
+                   └────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════
+
+📝 OPCIONES DE PRUEBA:
+
+1. AUTOMÁTICA (Recomendado)
+   ─────────────────────────
+   python test_endpoints_interactivo.py
+
+   ✓ Prueba TODO automáticamente
+   ✓ Maneja IDs automáticamente
+   ✓ Salida con colores
+   ✓ Solo necesita el servidor corriendo
+
+2. MANUAL CON CURL
+   ────────────────
+   Ver: GUIA_PRUEBA_ENDPOINTS.md
+
+   Comandos específicos para cada endpoint:
+
+   curl -X POST http://localhost:5000/api/auth/registro \
+     -H "Content-Type: application/json" \
+     -d '{"nombre":"Test","email":"test@example.com","password":"Pass!"}'
+
+3. ENTENDER EL FLUJO
+   ────────────────
+   Ver: FLUJO_COMPLETO.md
+
+   Diagramas y explicación completa de cada fase
+
+4. REFERENCIA COMPLETA
+   ──────────────────
+   Ver: ENDPOINTS.md
+
+   Todos los 52 endpoints documentados
+
+═══════════════════════════════════════════════════════════════════════════
+
+✅ VERIFICAR QUE TODO FUNCIONA:
+
+1. Servidor corriendo
+   ✓ http://localhost:5000 accesible
+
+2. Autenticación
+   ✓ Registro y login funcionan
+   ✓ Tokens generados
+
+3. Estructura
+   ✓ Categorías creadas
+   ✓ Etiquetas creadas
+
+4. Documentos
+   ✓ Archivo subido
+   ✓ Indexado
+   ✓ Etiquetado
+
+5. Búsqueda
+   ✓ Resultados encontrados
+   ✓ Historial registrado
+   ✓ Búsquedas populares listadas
+
+6. Recomendaciones
+   ✓ Generadas correctamente
+   ✓ Documentos similares
+   ✓ Populares listados
+
+7. Análisis
+   ✓ Accesos registrados
+   ✓ Estadísticas disponibles
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎯 DETALLES DE CADA FASE:
+
+FASE 1: AUTENTICACIÓN (5 tests)
+───────────────────────────────
+POST /auth/registro         → Crear usuario
+GET  /auth/perfil          → Obtener perfil
+PUT  /auth/perfil          → Actualizar perfil
+POST /auth/cambiar-password → Cambiar password
+POST /auth/verificar-token  → Verificar token
+
+FASE 2: CATEGORÍAS (5 tests)
+────────────────────────────
+POST /categorias            → Crear
+POST /categorias            → Crear subcategorías
+GET  /categorias            → Listar
+GET  /categorias/arbol      → Ver árbol
+GET  /categorias/{id}       → Obtener específica
+
+FASE 3: ETIQUETAS (6 tests)
+────────────────────────────
+POST /etiquetas             → Crear etiqueta
+POST /etiquetas             → Crear más etiquetas
+GET  /etiquetas             → Listar
+GET  /etiquetas/{id}        → Obtener
+PUT  /etiquetas/{id}        → Actualizar
+DELETE /etiquetas/{id}      → Eliminar
+
+FASE 4: DOCUMENTOS (13 tests)
+──────────────────────────────
+POST /documentos/subir      → Subir archivo
+POST /documentos/{id}/palabras-clave → Indexar
+GET  /documentos/{id}/palabras-clave → Obtener palabras
+POST /documentos/{id}/etiquetas → Agregar etiqueta
+GET  /documentos/{id}/etiquetas → Obtener etiquetas
+DELETE /documentos/{id}/etiquetas/{eid} → Remover etiqueta
+GET  /documentos             → Listar públicos
+GET  /documentos/mis-documentos → Mis documentos
+GET  /documentos/{id}        → Obtener documento
+PUT  /documentos/{id}        → Actualizar
+DELETE /documentos/{id}      → Eliminar
+GET  /documentos/{id}/accesos → Ver accesos
+
+FASE 5: BÚSQUEDA (8 tests)
+────────────────────────────
+GET /busca/buscar?q=...     → Búsqueda simple
+GET /busca/buscar?q=...&filtros → Con filtros
+GET /busca/categoria/{id}   → Por categoría
+GET /busca/etiquetas        → Por etiquetas
+GET /busca/similares/{id}   → Documentos similares
+GET /busca/historial        → Historial
+GET /busca/populares        → Búsquedas populares
+
+FASE 6: RECOMENDACIONES (5 tests)
+──────────────────────────────────
+POST /recomendaciones/.../generar → Generar TF-IDF
+POST /recomendaciones/.../generar → Generar por categoría
+GET  /recomendaciones/documento/{id} → Obtener
+GET  /recomendaciones/populares → Ver populares
+DELETE /recomendaciones/documento/{id} → Eliminar
+
+═══════════════════════════════════════════════════════════════════════════
+
+⚡ COMANDOS RÁPIDOS:
+
+Iniciar servidor:
+$ python app.py
+
+Probar todo:
+$ python test_endpoints_interactivo.py
+
+Ver documentación:
+$ cat GUIA_PRUEBA_ENDPOINTS.md
+$ cat FLUJO_COMPLETO.md
+
+Manual con curl:
+$ curl -X POST http://localhost:5000/api/auth/registro ...
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎓 DESPUÉS DE PRUEBAS, ENTENDERÁS:
+
+✓ Cómo funciona autenticación JWT
+✓ Estructura RESTful de APIs
+✓ Búsqueda e indexación de documentos
+✓ Relaciones en bases de datos (N:N, 1:N)
+✓ Algoritmos de recomendación (TF-IDF)
+✓ Análisis de datos y estadísticas
+✓ Organización jerárquica de datos
+✓ Gestión de accesos y permisos
+
+═══════════════════════════════════════════════════════════════════════════
+
+🚀 PRÓXIMOS PASOS:
+
+1. Conectar a PostgreSQL real
+2. Agregar más datos de prueba
+3. Crear frontend (React/Vue)
+4. Implementar búsqueda full-text
+5. Agregar OCR para imágenes
+6. Deploy a producción
+
+═══════════════════════════════════════════════════════════════════════════
+
+📞 SOPORTE:
+
+Si tienes problemas:
+1. Verifica que el servidor está en http://localhost:5000
+2. Verifica que tienes Python 3.9+
+3. Instala requests: pip install requests
+4. Lee FLUJO_COMPLETO.md para entender la lógica
+5. Usa ENDPOINTS.md como referencia
+
+═══════════════════════════════════════════════════════════════════════════
+
+                           ¡LISTO PARA PROBAR!
+
+                           Ejecuta:
+                    python test_endpoints_interactivo.py
+
+═══════════════════════════════════════════════════════════════════════════
+
