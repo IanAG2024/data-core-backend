@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from flask import Flask, jsonify
+from flask_cors import CORS
 from dotenv import load_dotenv
 
 from backend.models import db
@@ -27,6 +28,14 @@ def create_app(config_object: str | dict = "backend.config.Config") -> Flask:
         app.config.update(config_object)
     else:
         app.config.from_object(config_object)
+
+    # Habilitar CORS para el frontend en desarrollo
+    CORS(app, resources={r"/api/*": {"origins": [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+    ]}}, supports_credentials=True)
 
     # Inicializar SQLAlchemy
     db.init_app(app)
