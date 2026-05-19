@@ -6,6 +6,7 @@ from uuid import uuid4
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Index, Text, Numeric
 from sqlalchemy.dialects.postgresql import UUID, ENUM, JSONB
+from sqlalchemy.sql import func
 
 db = SQLAlchemy()
 
@@ -14,10 +15,13 @@ db = SQLAlchemy()
 class TipoArchivo(str):
     """Tipos de archivo permitidos"""
     TEXTO = 'texto'
+    WORD = 'word'
+    EXCEL = 'excel'
+    POWERPOINT = 'powerpoint'
     IMAGEN = 'imagen'
     VIDEO = 'video'
     AUDIO = 'audio'
-    DOCUMENTO = 'documento'
+    PDF = 'pdf'
     OTRO = 'otro'
 
 
@@ -131,8 +135,8 @@ class Documentos(db.Model):
     metadatos = db.Column(JSONB, default={})
     estado = db.Column(db.String(50), default=EstadoProcesamiento.PENDIENTE)
     error_mensaje = db.Column(db.Text)
-    creado_en = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
-    actualizado_en = db.Column(db.DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+    creado_en = db.Column(db.DateTime(timezone=True), default=func.now())
+    actualizado_en = db.Column(db.DateTime(timezone=True), default=func.now(), onupdate=func.now())
     ultimo_acceso = db.Column(db.DateTime(timezone=True))
 
     # Relaciones
@@ -182,7 +186,7 @@ class AccesosDocumentos(db.Model):
     documento_id = db.Column(UUID(as_uuid=True), db.ForeignKey('buscador.documentos.id'), nullable=False)
     usuario_id = db.Column(UUID(as_uuid=True), db.ForeignKey('buscador.usuarios.id'), nullable=True)
     accion = db.Column(db.String(50), default='visualizar')
-    accedido_en = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
+    accedido_en = db.Column(db.DateTime(timezone=True), default=func.now())
 
     def to_dict(self):
         return {
@@ -229,7 +233,7 @@ class Previews(db.Model):
     ruta = db.Column(db.Text, nullable=False)
     ancho = db.Column(db.Integer)
     alto = db.Column(db.Integer)
-    generado_en = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
+    generado_en = db.Column(db.DateTime(timezone=True), default=func.now())
 
     def to_dict(self):
         return {
@@ -256,7 +260,7 @@ class HistorialBusquedas(db.Model):
     filtros = db.Column(JSONB, default={})
     total_resultados = db.Column(db.Integer, default=0)
     ip_origen = db.Column(db.Text)
-    buscado_en = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
+    buscado_en = db.Column(db.DateTime(timezone=True), default=func.now())
 
     def to_dict(self):
         return {

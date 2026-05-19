@@ -24,14 +24,9 @@ def obtener_usuario_id_del_token():
     return TokenService.obtener_usuario_id_del_token(token)
 
 
-def archivo_permitido(filename):
-    """Verificar si la extensión de archivo es permitida"""
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
-
-
 @documentos_bp.route('/subir', methods=['POST'])
 def subir_documento():
-    """Subir nuevo documento"""
+    """Subir nuevo documento — acepta cualquier tipo de archivo"""
     try:
         usuario_id = obtener_usuario_id_del_token()
         
@@ -40,11 +35,8 @@ def subir_documento():
         
         archivo = request.files['archivo']
         
-        if archivo.filename == '':
+        if not archivo.filename or archivo.filename == '':
             return jsonify({'error': 'Archivo vacío'}), 400
-        
-        if not archivo_permitido(archivo.filename):
-            return jsonify({'error': 'Tipo de archivo no permitido'}), 400
         
         # Obtener datos del formulario
         titulo = request.form.get('titulo', archivo.filename)
@@ -57,6 +49,10 @@ def subir_documento():
         
         # Guardar archivo
         filename = secure_filename(archivo.filename)
+        # Preservar extensión si secure_filename la eliminó (ej: .py → _py)
+        if '.' not in filename and '.' in archivo.filename:
+            ext = archivo.filename.rsplit('.', 1)[1].lower()
+            filename = filename + '.' + ext
         ruta_archivo = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
         archivo.save(ruta_archivo)
         
@@ -201,10 +197,10 @@ def eliminar_documento(documento_id):
 
 @documentos_bp.route('', methods=['GET'])
 def listar_documentos():
-    """Listar documentos públicos"""
+    """Listar documentos (todos, sin requerir autenticación)"""
     try:
         pagina = request.args.get('pagina', 1, type=int)
-        por_pagina = request.args.get('por_pagina', 10, type=int)
+        por_pagina = request.args.get('por_pagina', 50, type=int)
         categoria_id = request.args.get('categoria_id', type=int)
         tipo = request.args.get('tipo')
         
@@ -213,7 +209,7 @@ def listar_documentos():
             por_pagina=por_pagina,
             categoria_id=categoria_id,
             tipo=tipo,
-            es_publico=True
+            es_publico=None  # Devuelve todos
         )
         
         return jsonify({
@@ -399,37 +395,42 @@ def obtener_etiquetas_documento(documento_id):
 @documentos_bp.route('/<documento_id>/archivo', methods=['GET'])
 def obtener_archivo(documento_id):
     """
-    Obtener/Descargar/Visualizar archivo del documento
-    
-    Soporta:
-    - Imágenes: <img src="/api/documentos/{id}/archivo">
-    - Videos: <video><source src="/api/documentos/{id}/archivo"></video>
-    - Audio: <audio><source src="/api/documentos/{id}/archivo"></audio>
-    - PDF: <iframe src="/api/documentos/{id}/archivo"></iframe>
+    Obtener/Visualizar archivo del documento en el navegador.
     """
     try:
         doc_id = UUID(documento_id)
         documento = DocumentoService.obtener_documento(doc_id)
-        
+
         if not documento:
             return jsonify({'error': 'Documento no encontrado'}), 404
-        
-        # Verificar que el archivo existe
-        if not os.path.exists(documento.ruta_almacenamiento):
+
+        # Asegurar ruta absoluta
+        ruta = documento.ruta_almacenamiento
+        if not os.path.isabs(ruta):
+            from backend.config import BASE_DIR
+            ruta = os.path.join(str(BASE_DIR), ruta)
+
+        if not os.path.exists(ruta):
             return jsonify({'error': 'Archivo no existe en el sistema'}), 404
-        
-        # Registrar acceso
+
         usuario_id = obtener_usuario_id_del_token()
-        DocumentoService.registrar_acceso(doc_id, usuario_id, 'descargar')
-        
-        # Servir el archivo
-        # as_attachment=False permite visualizar en el navegador
-        # as_attachment=True fuerza la descarga
+        DocumentoService.registrar_acceso(doc_id, usuario_id, 'visualizar')
+
+        # Asegurar ruta absoluta
+        ruta = documento.ruta_almacenamiento
+        if not os.path.isabs(ruta):
+            from backend.config import BASE_DIR
+            ruta = os.path.join(str(BASE_DIR), ruta)
+
+        # Determinar mime_type seguro
+        mime = documento.mime_type or 'application/octet-stream'
+
         return send_file(
-            documento.ruta_almacenamiento,
-            mimetype=documento.mime_type,
+            ruta,
+            mimetype=mime,
             download_name=documento.nombre_original,
-            as_attachment=False
+            as_attachment=False,
+            conditional=True,
         )
         
     except ValueError:
@@ -441,35 +442,101 @@ def obtener_archivo(documento_id):
 @documentos_bp.route('/<documento_id>/descargar', methods=['GET'])
 def descargar_archivo(documento_id):
     """
-    Descargar archivo del documento (fuerza descarga)
-    
-    Igual que /archivo pero fuerza descargar en lugar de visualizar
+    Descargar archivo del documento (fuerza descarga en el navegador).
     """
     try:
         doc_id = UUID(documento_id)
         documento = DocumentoService.obtener_documento(doc_id)
-        
+
         if not documento:
             return jsonify({'error': 'Documento no encontrado'}), 404
-        
-        # Verificar que el archivo existe
-        if not os.path.exists(documento.ruta_almacenamiento):
+
+        # Asegurar ruta absoluta
+        ruta = documento.ruta_almacenamiento
+        if not os.path.isabs(ruta):
+            from backend.config import BASE_DIR
+            ruta = os.path.join(str(BASE_DIR), ruta)
+
+        if not os.path.exists(ruta):
             return jsonify({'error': 'Archivo no existe en el sistema'}), 404
-        
-        # Registrar acceso
+
         usuario_id = obtener_usuario_id_del_token()
         DocumentoService.registrar_acceso(doc_id, usuario_id, 'descargar')
-        
-        # Servir el archivo como descarga
+
+        mime = documento.mime_type or 'application/octet-stream'
+
         return send_file(
-            documento.ruta_almacenamiento,
-            mimetype=documento.mime_type,
+            ruta,
+            mimetype=mime,
             download_name=documento.nombre_original,
-            as_attachment=True
+            as_attachment=True,
         )
-        
+
     except ValueError:
         return jsonify({'error': 'ID de documento inválido'}), 400
     except Exception as e:
         return jsonify({'error': f'Error al descargar: {str(e)}'}), 500
 
+
+@documentos_bp.route('/<documento_id>/contenido', methods=['GET'])
+def obtener_contenido_texto(documento_id):
+    """
+    Devuelve el contenido de texto de un archivo (código fuente, txt, json, etc.)
+    para que el frontend pueda renderizarlo directamente en el visor.
+    Límite: 500 KB para evitar respuestas muy grandes.
+    """
+    TIPOS_TEXTO = {
+        'texto', 'otro',  # tipos del backend que pueden ser texto
+    }
+    EXTENSIONES_TEXTO = {
+        'txt', 'md', 'markdown', 'rst', 'csv', 'json', 'yaml', 'yml',
+        'xml', 'toml', 'ini', 'cfg', 'conf', 'env', 'log',
+        'html', 'htm', 'css', 'scss', 'sass',
+        'js', 'jsx', 'ts', 'tsx', 'vue', 'svelte',
+        'py', 'pyw', 'java', 'kt', 'c', 'h', 'cpp', 'cc', 'cs',
+        'go', 'rs', 'rb', 'php', 'swift', 'dart', 'r', 'sql',
+        'sh', 'bash', 'zsh', 'ps1', 'bat', 'lua', 'pl',
+        'scala', 'ex', 'exs', 'hs', 'clj',
+    }
+    MAX_BYTES = 512 * 1024  # 500 KB
+
+    try:
+        doc_id = UUID(documento_id)
+        documento = DocumentoService.obtener_documento(doc_id)
+
+        if not documento:
+            return jsonify({'error': 'Documento no encontrado'}), 404
+
+        # Asegurar ruta absoluta
+        ruta = documento.ruta_almacenamiento
+        if not os.path.isabs(ruta):
+            from backend.config import BASE_DIR
+            ruta = os.path.join(str(BASE_DIR), ruta)
+
+        if not os.path.exists(ruta):
+            return jsonify({'error': 'Archivo no existe en el sistema'}), 404
+
+        ext = (documento.extension or '').lower()
+        if ext not in EXTENSIONES_TEXTO and documento.tipo not in TIPOS_TEXTO:
+            return jsonify({'error': 'Este archivo no es de texto'}), 400
+
+        tamano = os.path.getsize(ruta)
+        if tamano > MAX_BYTES:
+            return jsonify({
+                'error': f'Archivo demasiado grande para vista previa ({tamano // 1024} KB). Descárgalo para verlo completo.',
+                'demasiado_grande': True,
+            }), 413
+
+        with open(ruta, 'r', encoding='utf-8', errors='replace') as f:
+            contenido = f.read()
+
+        return jsonify({
+            'contenido': contenido,
+            'extension': ext,
+            'tamano_bytes': tamano,
+        }), 200
+
+    except ValueError:
+        return jsonify({'error': 'ID de documento inválido'}), 400
+    except Exception as e:
+        return jsonify({'error': f'Error al leer contenido: {str(e)}'}), 500

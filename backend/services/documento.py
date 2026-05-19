@@ -97,9 +97,14 @@ class DocumentoService:
         if categoria_id:
             query = query.filter_by(categoria_id=categoria_id)
         if tipo:
-            query = query.filter_by(tipo=tipo)
+            if tipo == "otros":
+                query = query.filter(Documentos.tipo.notin_(['word', 'excel', 'powerpoint', 'imagen', 'video', 'audio', 'pdf']))
+            else:
+                query = query.filter_by(tipo=tipo)
         if es_publico is not None:
             query = query.filter_by(es_publico=es_publico)
+            
+        query = query.order_by(Documentos.creado_en.desc())
         
         return query.paginate(page=pagina, per_page=por_pagina)
 
@@ -141,26 +146,97 @@ class DocumentoService:
     def obtener_tipo_archivo(nombre_archivo: str) -> str:
         """Determinar tipo de archivo según extensión"""
         extension = Path(nombre_archivo).suffix.lower().lstrip('.')
-        
+
         tipos = {
+            # Documentos de oficina
+            'pdf': TipoArchivo.PDF,
+            'docx': TipoArchivo.WORD,
+            'doc': TipoArchivo.WORD,
+            'xlsx': TipoArchivo.EXCEL,
+            'xls': TipoArchivo.EXCEL,
+            'pptx': TipoArchivo.POWERPOINT,
+            'ppt': TipoArchivo.POWERPOINT,
+            'odt': TipoArchivo.WORD,
+            'ods': TipoArchivo.EXCEL,
+            # Texto plano y datos
             'txt': TipoArchivo.TEXTO,
-            'pdf': TipoArchivo.DOCUMENTO,
-            'docx': TipoArchivo.DOCUMENTO,
-            'doc': TipoArchivo.DOCUMENTO,
-            'xlsx': TipoArchivo.DOCUMENTO,
-            'xls': TipoArchivo.DOCUMENTO,
-            'pptx': TipoArchivo.DOCUMENTO,
-            'ppt': TipoArchivo.DOCUMENTO,
+            'md': TipoArchivo.TEXTO,
+            'markdown': TipoArchivo.TEXTO,
+            'rst': TipoArchivo.TEXTO,
+            'csv': TipoArchivo.TEXTO,
+            'json': TipoArchivo.TEXTO,
+            'yaml': TipoArchivo.TEXTO,
+            'yml': TipoArchivo.TEXTO,
+            'xml': TipoArchivo.TEXTO,
+            'toml': TipoArchivo.TEXTO,
+            'ini': TipoArchivo.TEXTO,
+            'cfg': TipoArchivo.TEXTO,
+            'conf': TipoArchivo.TEXTO,
+            'env': TipoArchivo.TEXTO,
+            'log': TipoArchivo.TEXTO,
+            # Código fuente — web
+            'html': TipoArchivo.TEXTO,
+            'htm': TipoArchivo.TEXTO,
+            'css': TipoArchivo.TEXTO,
+            'scss': TipoArchivo.TEXTO,
+            'sass': TipoArchivo.TEXTO,
+            'js': TipoArchivo.TEXTO,
+            'jsx': TipoArchivo.TEXTO,
+            'ts': TipoArchivo.TEXTO,
+            'tsx': TipoArchivo.TEXTO,
+            'vue': TipoArchivo.TEXTO,
+            'svelte': TipoArchivo.TEXTO,
+            # Código fuente — backend
+            'py': TipoArchivo.TEXTO,
+            'pyw': TipoArchivo.TEXTO,
+            'java': TipoArchivo.TEXTO,
+            'kt': TipoArchivo.TEXTO,
+            'c': TipoArchivo.TEXTO,
+            'h': TipoArchivo.TEXTO,
+            'cpp': TipoArchivo.TEXTO,
+            'cc': TipoArchivo.TEXTO,
+            'cs': TipoArchivo.TEXTO,
+            'go': TipoArchivo.TEXTO,
+            'rs': TipoArchivo.TEXTO,
+            'rb': TipoArchivo.TEXTO,
+            'php': TipoArchivo.TEXTO,
+            'swift': TipoArchivo.TEXTO,
+            'dart': TipoArchivo.TEXTO,
+            'r': TipoArchivo.TEXTO,
+            'sql': TipoArchivo.TEXTO,
+            'sh': TipoArchivo.TEXTO,
+            'bash': TipoArchivo.TEXTO,
+            'zsh': TipoArchivo.TEXTO,
+            'ps1': TipoArchivo.TEXTO,
+            'bat': TipoArchivo.TEXTO,
+            'lua': TipoArchivo.TEXTO,
+            'pl': TipoArchivo.TEXTO,
+            'scala': TipoArchivo.TEXTO,
+            'ex': TipoArchivo.TEXTO,
+            'exs': TipoArchivo.TEXTO,
+            'hs': TipoArchivo.TEXTO,
+            'clj': TipoArchivo.TEXTO,
+            # Imágenes
             'png': TipoArchivo.IMAGEN,
             'jpg': TipoArchivo.IMAGEN,
             'jpeg': TipoArchivo.IMAGEN,
             'gif': TipoArchivo.IMAGEN,
+            'webp': TipoArchivo.IMAGEN,
+            'svg': TipoArchivo.IMAGEN,
+            'bmp': TipoArchivo.IMAGEN,
+            'ico': TipoArchivo.IMAGEN,
+            # Video
             'mp4': TipoArchivo.VIDEO,
             'avi': TipoArchivo.VIDEO,
             'mov': TipoArchivo.VIDEO,
+            'mkv': TipoArchivo.VIDEO,
+            'webm': TipoArchivo.VIDEO,
+            # Audio
             'mp3': TipoArchivo.AUDIO,
             'wav': TipoArchivo.AUDIO,
             'flac': TipoArchivo.AUDIO,
+            'ogg': TipoArchivo.AUDIO,
+            'aac': TipoArchivo.AUDIO,
         }
-        
+
         return tipos.get(extension, TipoArchivo.OTRO)
