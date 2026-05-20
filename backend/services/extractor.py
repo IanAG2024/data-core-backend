@@ -44,10 +44,17 @@ def extraer_texto(ruta: str | Path) -> Optional[str]:
             return _extraer_xlsx(ruta)
         elif extension in ("pptx", "ppt"):
             return _extraer_pptx(ruta)
+        elif extension in ("png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff"):
+            return _extraer_imagen(ruta)
+        elif extension in ("mp3", "wav", "ogg", "flac", "m4a", "aac"):
+            return _extraer_audio(ruta)
+        elif extension in ("mp4", "avi", "mkv", "mov", "webm"):
+            return _extraer_video(ruta)
         elif extension in _PLAIN_TEXT_EXTENSIONS:
             return _extraer_texto_plano(ruta)
-    except Exception:
+    except Exception as e:
         # Si falla la extracción, no bloqueamos la subida del archivo
+        print(f"Error en extraer_texto para {ruta}: {e}")
         return None
 
     return None
@@ -107,6 +114,113 @@ def _extraer_pptx(ruta: Path) -> Optional[str]:
                     partes.append(forma.text.strip())
         return "\n".join(partes) if partes else None
     except ImportError:
+        return None
+
+
+def _extraer_imagen(ruta: Path) -> Optional[str]:
+    """Extrae texto de una imagen usando Tesseract OCR."""
+    try:
+        from PIL import Image
+        import pytesseract
+        import os
+        
+        # Configurar la ruta de Tesseract en Windows si existe
+        ruta_tesseract = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+        if os.path.exists(ruta_tesseract):
+            pytesseract.pytesseract.tesseract_cmd = ruta_tesseract
+        
+        imagen = Image.open(str(ruta))
+        texto = pytesseract.image_to_string(imagen)
+        return texto.strip() if texto.strip() else None
+    except ImportError:
+        return None
+    except Exception as e:
+        print(f"Error OCR en imagen {ruta}: {e}")
+        return None
+
+
+def _extraer_audio(ruta: Path) -> Optional[str]:
+    """Extrae transcripción de un archivo de audio usando SpeechRecognition."""
+    try:
+        import speech_recognition as sr
+        from moviepy.editor import AudioFileClip
+        import tempfile
+        import os
+        
+        # Convertir a WAV usando moviepy (que ya usa imageio_ffmpeg)
+        audio = AudioFileClip(str(ruta))
+        
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_wav:
+            temp_wav_path = temp_wav.name
+            
+        # Limitar a los primeros 3 minutos (180 segundos) si es muy largo
+        if audio.duration > 180:
+            audio = audio.subclip(0, 180)
+            
+        audio.write_audiofile(temp_wav_path, logger=None)
+        audio.close()
+        
+        recognizer = sr.Recognizer()
+        with sr.AudioFile(temp_wav_path) as source:
+            # Leer los primeros 3 minutos para no exceder límites de API
+            audio_data = recognizer.record(source, duration=180)
+            
+        # Intentar reconocer (requiere internet para la API de Google)
+        try:
+            texto = recognizer.recognize_google(audio_data, language="es-ES")
+        except sr.UnknownValueError:
+            texto = None
+        except sr.RequestError as e:
+            print(f"Error en API de SpeechRecognition: {e}")
+            texto = None
+            
+        # Limpiar temporal
+        try:
+            os.remove(temp_wav_path)
+        except OSError:
+            pass
+            
+        return texto.strip() if texto and texto.strip() else None
+    except ImportError:
+        return None
+    except Exception as e:
+        print(f"Error transcribiendo audio {ruta}: {e}")
+        return None
+
+
+def _extraer_video(ruta: Path) -> Optional[str]:
+    """Extrae audio de un video y luego lo transcribe."""
+    try:
+        from moviepy.editor import VideoFileClip
+        import tempfile
+        import os
+        
+        video = VideoFileClip(str(ruta))
+        if not video.audio:
+            video.close()
+            return None
+            
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_audio:
+            temp_audio_path = temp_audio.name
+            
+        # Extraer audio
+        video.audio.write_audiofile(temp_audio_path, logger=None)
+        video.close()
+        
+        # Reutilizar la función de extracción de audio
+        texto = _extraer_audio(Path(temp_audio_path))
+        
+        # Limpiar temporal
+        try:
+            os.remove(temp_audio_path)
+        except OSError:
+            pass
+            
+        return texto
+    except ImportError:
+        return None
+    except Exception as e:
+        print(f"Error procesando video {ruta}: {e}")
         return None
 
 

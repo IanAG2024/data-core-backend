@@ -604,8 +604,15 @@ def reindexar_documentos():
 
         for doc in documentos_sin_texto:
             try:
+                # Asegurar ruta absoluta
+                ruta_archivo = doc.ruta_almacenamiento
+                import os
+                if not os.path.isabs(ruta_archivo):
+                    from backend.config import BASE_DIR
+                    ruta_archivo = os.path.join(str(BASE_DIR), ruta_archivo)
+
                 # Extraer texto del archivo físico
-                contenido = extraer_texto(doc.ruta_almacenamiento)
+                contenido = extraer_texto(ruta_archivo)
                 if contenido:
                     doc.contenido_texto = contenido
                     doc.estado = 'completado'
