@@ -9,6 +9,7 @@ from backend.services.auth import TokenService
 from backend.services.documento import DocumentoService
 from backend.services.busca import BuscaService
 from backend.services.categoria import EtiquetaService
+from backend.services.extractor import extraer_texto, tokenizar_para_busqueda
 from backend.models import db
 
 documentos_bp = Blueprint('documentos', __name__, url_prefix='/api/documentos')
@@ -60,23 +61,46 @@ def subir_documento():
         hash_archivo = DocumentoService.calcular_hash_archivo(ruta_archivo)
         tipo_archivo = DocumentoService.obtener_tipo_archivo(filename)
         tamano_bytes = os.path.getsize(ruta_archivo)
+
+        # ── Extracción de texto ──────────────────────────────────────────
+        # Extraemos el contenido del archivo para que la búsqueda funcione
+        # sobre el contenido completo, no sólo sobre el título.
+        contenido_texto = extraer_texto(ruta_archivo)
         
-        # Crear documento
+        # Crear documento (con contenido_texto ya poblado)
         documento = DocumentoService.crear_documento(
             usuario_id=usuario_id,
             titulo=titulo,
             nombre_original=archivo.filename,
             ruta_almacenamiento=ruta_archivo,
             tipo_archivo=tipo_archivo,
-            extension=filename.rsplit('.', 1)[1].lower(),
+            extension=filename.rsplit('.', 1)[1].lower() if '.' in filename else '',
             mime_type=archivo.content_type,
             tamano_bytes=tamano_bytes,
             hash_sha256=hash_archivo,
             es_publico=es_publico,
             categoria_id=categoria_id,
             descripcion=descripcion,
+            contenido_texto=contenido_texto,
+            estado='completado' if contenido_texto is not None else 'pendiente',
             metadatos={'filename_original': archivo.filename}
         )
+
+        # ── Generar palabras clave automáticamente ───────────────────────
+        # Tokenizamos título + descripción + contenido para poblar la tabla
+        # palabras_clave, que es la que usa la búsqueda por similitud.
+        texto_completo = ' '.join(filter(None, [titulo, descripcion, contenido_texto]))
+        tokens = tokenizar_para_busqueda(texto_completo)
+        if tokens:
+            try:
+                BuscaService.agregar_palabras_clave(
+                    documento_id=documento.id,
+                    palabras=tokens[:200],  # máximo 200 tokens por documento
+                    fuente='auto',
+                    peso=0.8,
+                )
+            except Exception:
+                pass  # no bloqueamos si falla la indexación
         
         return jsonify({
             'mensaje': 'Documento subido exitosamente',
@@ -540,3 +564,66 @@ def obtener_contenido_texto(documento_id):
         return jsonify({'error': 'ID de documento inválido'}), 400
     except Exception as e:
         return jsonify({'error': f'Error al leer contenido: {str(e)}'}), 500
+
+
+@documentos_bp.route('/admin/reindexar', methods=['POST'])
+def reindexar_documentos():
+    """
+    Re-indexa todos los documentos que no tienen contenido_texto extraído.
+    Útil para procesar documentos subidos antes de implementar la extracción.
+    """
+    try:
+        from backend.models import Documentos
+        documentos_sin_texto = Documentos.query.filter(
+            Documentos.contenido_texto == None
+        ).all()
+
+        procesados = 0
+        errores = 0
+
+        for doc in documentos_sin_texto:
+            try:
+                # Extraer texto del archivo físico
+                contenido = extraer_texto(doc.ruta_almacenamiento)
+                if contenido:
+                    doc.contenido_texto = contenido
+                    doc.estado = 'completado'
+
+                    # Generar tokens automáticamente
+                    texto_completo = ' '.join(filter(None, [doc.titulo, doc.descripcion, contenido]))
+                    tokens = tokenizar_para_busqueda(texto_completo)
+                    if tokens:
+                        BuscaService.agregar_palabras_clave(
+                            documento_id=doc.id,
+                            palabras=tokens[:200],
+                            fuente='auto',
+                            peso=0.8,
+                        )
+                    procesados += 1
+                else:
+                    # Archivos no textuales (imágenes, vídeos, etc.): marcar como completado igual
+                    doc.estado = 'completado'
+                    # Agregar al menos el título como palabra clave
+                    tokens_titulo = tokenizar_para_busqueda(' '.join(filter(None, [doc.titulo, doc.descripcion])))
+                    if tokens_titulo:
+                        BuscaService.agregar_palabras_clave(
+                            documento_id=doc.id,
+                            palabras=tokens_titulo[:50],
+                            fuente='auto',
+                            peso=0.5,
+                        )
+                    procesados += 1
+            except Exception:
+                errores += 1
+
+        db.session.commit()
+
+        return jsonify({
+            'mensaje': f'Re-indexación completada: {procesados} procesados, {errores} errores',
+            'procesados': procesados,
+            'errores': errores,
+            'total': len(documentos_sin_texto),
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': f'Error en re-indexación: {str(e)}'}), 500
