@@ -153,6 +153,7 @@ class Documentos(db.Model):
             'titulo': self.titulo,
             'descripcion': self.descripcion,
             'tipo': self.tipo,
+            'extension': self.extension,
             'nombre_original': self.nombre_original,
             'tamano_bytes': self.tamano_bytes,
             'es_publico': self.es_publico,

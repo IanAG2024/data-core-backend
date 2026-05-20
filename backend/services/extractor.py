@@ -1,7 +1,4 @@
-"""
-Servicio de extracción de texto de archivos.
-Soporta PDF, DOCX, XLSX, PPTX y archivos de texto plano.
-"""
+
 from __future__ import annotations
 
 import re

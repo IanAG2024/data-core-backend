@@ -24,5 +24,5 @@ class Config:
     }
     
     # Configuración de archivos
-    ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'mp3', 'mp4', 'wav', 'avi'}
+    ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'mp3', 'mp4', 'wav', 'avi', 'sql', 'py', 'js', 'json', 'xml', 'csv', 'yaml', 'yml', 'md', 'html', 'css', 'java', 'cpp', 'c', 'h', 'zip', 'tar', 'gz', 'dll', 'exe', 'bin', 'db', 'sqlite', 'sqlite3'}
     MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB

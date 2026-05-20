@@ -38,8 +38,18 @@ def subir_documento():
         
         if not archivo.filename or archivo.filename == '':
             return jsonify({'error': 'Archivo vacío'}), 400
+        # Validar extensión del archivo
+        filename_lower = archivo.filename.lower()
+        extension = filename_lower.rsplit('.', 1)[1] if '.' in filename_lower else ''
         
-        # Obtener datos del formulario
+        allowed_extensions = current_app.config.get('ALLOWED_EXTENSIONS', set())
+        if extension and extension not in allowed_extensions:
+            return jsonify({
+                'error': f'Tipo de archivo no permitido: .{extension}',
+                'extensiones_permitidas': list(sorted(allowed_extensions))
+            }), 400
+        
+        
         titulo = request.form.get('titulo', archivo.filename)
         descripcion = request.form.get('descripcion', '')
         categoria_id = request.form.get('categoria_id', type=int)
@@ -65,7 +75,12 @@ def subir_documento():
         # ── Extracción de texto ──────────────────────────────────────────
         # Extraemos el contenido del archivo para que la búsqueda funcione
         # sobre el contenido completo, no sólo sobre el título.
-        contenido_texto = extraer_texto(ruta_archivo)
+        try:
+            contenido_texto = extraer_texto(ruta_archivo)
+        except Exception as e:
+            # Si falla la extracción, lo registramos pero continuamos
+            print(f"Error extrayendo texto de {ruta_archivo}: {str(e)}")
+            contenido_texto = None
         
         # Crear documento (con contenido_texto ya poblado)
         documento = DocumentoService.crear_documento(
@@ -108,7 +123,13 @@ def subir_documento():
         }), 201
     
     except Exception as e:
-        return jsonify({'error': f'Error al subir: {str(e)}'}), 500
+        import traceback
+        error_detail = traceback.format_exc()
+        print(f"Error al subir documento: {error_detail}")
+        return jsonify({
+            'error': f'Error al subir: {str(e)}',
+            'detalle': error_detail if current_app.debug else None
+        }), 500
 
 
 @documentos_bp.route('/<documento_id>', methods=['GET'])

@@ -18,6 +18,9 @@ class DocumentoService:
                        ruta_almacenamiento: str, tipo_archivo: str, **kwargs) -> Documentos:
         """Crear nuevo documento"""
         
+        # Obtener el estado del kwargs, si no se proporciona, usar COMPLETADO por defecto
+        estado = kwargs.get('estado', EstadoProcesamiento.COMPLETADO)
+        
         documento = Documentos(
             usuario_id=usuario_id,
             titulo=titulo,
@@ -32,13 +35,17 @@ class DocumentoService:
             contenido_texto=kwargs.get('contenido_texto'),
             idioma=kwargs.get('idioma', 'spanish'),
             metadatos=kwargs.get('metadatos', {}),
-            categoria_id=kwargs.get('categoria_id'),
+            estado=estado,
             descripcion=kwargs.get('descripcion'),
-            estado=EstadoProcesamiento.PENDIENTE,
         )
         
-        db.session.add(documento)
-        db.session.commit()
+        try:
+            db.session.add(documento)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            raise Exception(f"Error al guardar documento en BD: {str(e)}")
+        
         return documento
 
     @staticmethod
